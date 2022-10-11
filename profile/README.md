@@ -6,7 +6,7 @@ Razorpay aims to revolutionize money management for online businesses by providi
 
 ## Getting Started
 
-To get started with using Razorpay, [signup](https://dashboard.razorpay.com>), [check out our docs](https://razorpay.com/docs/), [list of integrations](https://razorpay.com/integrations/), and the [Razorpay App Store](https://razorpay.com/app-store/).
+To get started with using Razorpay, [signup](https://dashboard.razorpay.com), [check out our docs](https://razorpay.com/docs/), [list of integrations](https://razorpay.com/integrations/), and the [Razorpay App Store](https://razorpay.com/app-store/).
 
 ## Open Source ![Hacktoberfest Badge](https://img.shields.io/badge/Hacktoberfest-Open-green)
 
