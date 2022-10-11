@@ -1,4 +1,4 @@
-![banner](../banner.jpg)
+![banner](https://raw.githubusercontent.com/razorpay/.github/master/banner.jpg)
 
 # Razorpay
 
