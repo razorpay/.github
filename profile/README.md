@@ -16,9 +16,7 @@ We are always looking for new ways to improve the experience for developers. We 
 
 ## Hacktoberfest
 
-We are participating in [Hacktoberfest 2022](https://hacktoberfest.com/). Relevant repositories are tagged with Hacktoberfest, and contributions are welcome. Please see [this page](HACKTOBERFEST.md) for more details.
-
-Top contributors to Razorpay repositories will receive a custom Razorpay t-shirt.
+We are participating in [Hacktoberfest 2023](https://hacktoberfest.com/). Participate by contributing to Razorpay's open source repositories and receive special goodies. Please see [this page]( https://opensource.razorpay.com/hacktoberfest-2023/) for more details.
 
 ## Follow Us
 
