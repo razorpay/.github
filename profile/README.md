@@ -21,7 +21,7 @@ We are participating in [Hacktoberfest 2023](https://hacktoberfest.com/). Partic
 ## Follow Us
 
 - Check out our Engineering Blog at [engineering.razorpay.com](https://engineering.razorpay.com/).
-- Follow our Engineering team on [Twitter](https://twitter.com/RazorpayEngg)
+- Follow our Engineering team on [X.com](https://x.com/RazorpayTech)
 - Check out our stack at [StackShare](https://stackshare.io/companies/razorpay).
 - Follow our Design team on [Twitter](https://twitter.com/razorpay_design) or the [Design Blog](https://design.razorpay.com)
 
