@@ -130,7 +130,7 @@ RESPONSE=$(curl -s -w "\n%{http_code}" \
   -d "$BODY" 2>&1)
 
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-RESPONSE_BODY=$(echo "$RESPONSE" | head -n -1)
+RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
 
 echo "HTTP Status: ${HTTP_CODE}"
 

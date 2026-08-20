@@ -125,17 +125,18 @@ jobs:
 
       - name: Determine Slack channel
         id: slack
+        if: steps.config.outputs.enabled == 'true'
         env:
           CONFIG_CHANNEL: ${{ steps.config.outputs.slack_channel }}
+          TEAM_NAME: ${{ steps.config.outputs.team_name }}
         run: |
           # Use config channel, or fall back to a default based on team
           if [ -n "$CONFIG_CHANNEL" ]; then
             channel="$CONFIG_CHANNEL"
           else
             # Default: use team-based channel or a fallback
-            team="${{ steps.config.outputs.team_name }}"
-            if [ -n "$team" ]; then
-              channel=$(echo "$team" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+            if [ -n "$TEAM_NAME" ]; then
+              channel=$(echo "$TEAM_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
             else
               channel="depguard-alerts"
             fi
@@ -144,6 +145,7 @@ jobs:
           echo "channel=${channel}" >> $GITHUB_OUTPUT
 
       - name: Install envsubst
+        if: steps.config.outputs.enabled == 'true'
         run: |
           if ! command -v envsubst &> /dev/null; then
             sudo apt-get update -qq && sudo apt-get install -y -qq gettext-base
@@ -151,6 +153,7 @@ jobs:
 
       - name: Build Slash prompt
         id: prompt-final
+        if: steps.config.outputs.enabled == 'true'
         env:
           REPO_FULL_NAME: ${{ inputs.repo-full-name }}
           REPO_BRANCH: ${{ inputs.repo-default-branch }}
@@ -188,6 +191,7 @@ jobs:
 
       - name: Call Slash API
         id: slash
+        if: steps.config.outputs.enabled == 'true'
         env:
           SLASH_API_URL: ${{ inputs.slash-api-url }}
           SLASH_CI_USER: ${{ secrets.SLASH_PROD_CI_USER }}
@@ -199,30 +203,35 @@ jobs:
         run: |
           set -euo pipefail
 
+          # slash-api-url is a workflow_call input any calling repo's own
+          # workflow file controls — refuse to send org-shared CI credentials
+          # anywhere but the known prod host over HTTPS.
+          if [ "$SLASH_API_URL" != "https://slash.concierge.razorpay.com" ]; then
+            echo "::error::slash-api-url must be https://slash.concierge.razorpay.com, got: $SLASH_API_URL"
+            exit 1
+          fi
+
           PROMPT=$(cat /tmp/depguard_prompt_final.txt)
 
           # Build the API request body
-          # Escape the prompt for JSON
-          PROMPT_JSON=$(jq -n --arg p "$PROMPT" '{prompt: $p}')
-
           BODY=$(jq -n \
             --arg prompt "$PROMPT" \
             --arg repo_url "$REPO_URL" \
             --arg branch "$REPO_BRANCH" \
             --arg slack_channel "$SLACK_CHANNEL" \
-            --argjson skills '["depguard"]' \
+            --arg skill "$SKILL_NAME" \
             '{
               prompt: $prompt,
               repository_url: $repo_url,
               branch: $branch,
-              skills: $skills,
+              skills: [$skill],
               slack_channel: $slack_channel
             }')
 
           echo "Calling Slash API at $SLASH_API_URL/api/v1/agents/run"
           echo "Repository: $REPO_URL"
           echo "Slack channel: $SLACK_CHANNEL"
-          echo "Skill: depguard"
+          echo "Skill: $SKILL_NAME"
 
           RESPONSE=$(curl -s -w "\n%{http_code}" \
             -X POST "$SLASH_API_URL/api/v1/agents/run" \
@@ -231,7 +240,7 @@ jobs:
             -d "$BODY")
 
           HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-          RESPONSE_BODY=$(echo "$RESPONSE" | head -n -1)
+          RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
 
           echo "HTTP Status: $HTTP_CODE"
           echo "Response: $RESPONSE_BODY"
