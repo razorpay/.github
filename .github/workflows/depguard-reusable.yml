@@ -31,7 +31,7 @@ on:
         description: "Slash API base URL"
         type: string
         required: false
-        default: "https://slash.concierge.razorpay.com"
+        default: "https://slash-api.concierge.razorpay.com"
       depguard-skill-name:
         description: "Name of the DepGuard skill in razorpay/agent-skills"
         type: string
@@ -210,8 +210,8 @@ jobs:
           # slash-api-url is a workflow_call input any calling repo's own
           # workflow file controls — refuse to send org-shared CI credentials
           # anywhere but the known prod host over HTTPS.
-          if [ "$SLASH_API_URL" != "https://slash.concierge.razorpay.com" ]; then
-            echo "::error::slash-api-url must be https://slash.concierge.razorpay.com, got: $SLASH_API_URL"
+          if [ "$SLASH_API_URL" != "https://slash-api.concierge.razorpay.com" ]; then
+            echo "::error::slash-api-url must be https://slash-api.concierge.razorpay.com, got: $SLASH_API_URL"
             exit 1
           fi
 
