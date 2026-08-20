@@ -66,7 +66,7 @@ jobs:
           slack_channel=""
           ecosystems=""
           severity_threshold="medium"
-          max_prs_per_run="3"
+          max_prs_per_run="10"
           exclude_packages=""
           extra_prompt=""
 
@@ -79,7 +79,7 @@ jobs:
               slack_channel=$(yq '.slack_channel // ""' .github/depguard.yml)
               ecosystems=$(yq '.ecosystems | join(",")' .github/depguard.yml 2>/dev/null || echo "")
               severity_threshold=$(yq '.severity_threshold // "medium"' .github/depguard.yml)
-              max_prs_per_run=$(yq '.max_prs_per_run // 3' .github/depguard.yml)
+              max_prs_per_run=$(yq '.max_prs_per_run // 10' .github/depguard.yml)
               exclude_packages=$(yq '.exclude_packages | join(",")' .github/depguard.yml 2>/dev/null || echo "")
               extra_prompt=$(yq '.extra_prompt // ""' .github/depguard.yml)
             else
@@ -87,7 +87,7 @@ jobs:
               enabled=$(grep -E '^enabled:' .github/depguard.yml 2>/dev/null | awk '{print $2}' || echo "true")
               slack_channel=$(grep -E '^slack_channel:' .github/depguard.yml 2>/dev/null | sed 's/.*: *//' | tr -d '"' || echo "")
               severity_threshold=$(grep -E '^severity_threshold:' .github/depguard.yml 2>/dev/null | awk '{print $2}' || echo "medium")
-              max_prs_per_run=$(grep -E '^max_prs_per_run:' .github/depguard.yml 2>/dev/null | awk '{print $2}' || echo "3")
+              max_prs_per_run=$(grep -E '^max_prs_per_run:' .github/depguard.yml 2>/dev/null | awk '{print $2}' || echo "10")
             fi
           else
             echo "::warning::No .github/depguard.yml found — using defaults"

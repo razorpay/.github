@@ -82,7 +82,7 @@ enabled: true
 slack_channel: "edge-alerts"
 ecosystems: [go, npm]
 severity_threshold: medium
-max_prs_per_run: 3
+max_prs_per_run: 10
 ```
 
 ### 3. Add repo owners
@@ -208,7 +208,7 @@ Each finding is classified as: `not_affected`, `safe_bump`, `breaking`, or
 | `slack_channel` | string | `{team}` or `depguard-alerts` | Channel for findings |
 | `ecosystems` | list | all detected | Which ecosystems to scan |
 | `severity_threshold` | string | `medium` | Min severity to report |
-| `max_prs_per_run` | int | `3` | Max package upgrades bundled into the scan's single PR (name kept for compatibility — not a literal PR count) |
+| `max_prs_per_run` | int | `10` | Max package upgrades bundled into the scan's single PR (name kept for compatibility — not a literal PR count) |
 | `exclude_packages` | list | `[]` | Packages to skip |
 | `extra_prompt` | string | `""` | Repo-specific instructions |
 | `pr_ci_timeout_minutes` | int | `240` | Max time to poll an opened PR's CI before escalating instead of reporting it ready |

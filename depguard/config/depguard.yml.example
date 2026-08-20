@@ -22,7 +22,7 @@ severity_threshold: medium
 # Maximum number of package upgrades bundled into the scan's single PR
 # (one commit per package; this is a bundle-size cap, not a literal PR count —
 # a scan normally opens exactly one PR). Prioritizes critical and high findings.
-max_prs_per_run: 3
+max_prs_per_run: 10
 
 # Packages to exclude from scanning (by name)
 exclude_packages:

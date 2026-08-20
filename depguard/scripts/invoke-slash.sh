@@ -15,7 +15,7 @@
 #     --follow-up-emails "p1@razorpay.com,p2@razorpay.com" \
 #     --ecosystems "go,npm" \
 #     --severity "medium" \
-#     --max-prs "3" \
+#     --max-prs "10" \
 #     [--api-url "https://slash.concierge.razorpay.com"] \
 #     [--extra-prompt "..."]
 #
@@ -36,7 +36,7 @@ MANAGER_SLACK_ID=""
 FOLLOW_UP_EMAILS=""
 ECOSYSTEMS=""
 SEVERITY="medium"
-MAX_PRS="3"
+MAX_PRS="10"
 EXCLUDE_PACKAGES=""
 EXTRA_PROMPT=""
 CI_USER="${SLASH_PROD_CI_USER:-}"
