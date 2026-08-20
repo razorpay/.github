@@ -50,8 +50,8 @@ on:
 
 jobs:
   depguard-scan:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    runs-on: [self-hosted]
+    timeout-minutes: 70
     steps:
       - name: Checkout target repo
         uses: actions/checkout@v4
@@ -233,7 +233,7 @@ jobs:
           echo "Slack channel: $SLACK_CHANNEL"
           echo "Skill: $SKILL_NAME"
 
-          RESPONSE=$(curl -s -w "\n%{http_code}" \
+          RESPONSE=$(curl -s -w "\n%{http_code}" --max-time 3600 \
             -X POST "$SLASH_API_URL/api/v1/agents/run" \
             -H "Content-Type: application/json" \
             -u "$SLASH_CI_USER:$SLASH_CI_PASS" \
