@@ -16,7 +16,7 @@
 #     --ecosystems "go,npm" \
 #     --severity "medium" \
 #     --max-prs "10" \
-#     [--api-url "https://slash.concierge.razorpay.com"] \
+#     [--api-url "https://slash-api.concierge.razorpay.com"] \
 #     [--extra-prompt "..."]
 #
 # Required env vars (or pass via --ci-user / --ci-pass):
@@ -26,7 +26,7 @@
 set -euo pipefail
 
 # Defaults
-API_URL="https://slash.concierge.razorpay.com"
+API_URL="https://slash-api.concierge.razorpay.com"
 REPO=""
 BRANCH="master"
 SLACK_CHANNEL=""
@@ -75,8 +75,8 @@ if [ -z "$CI_USER" ] || [ -z "$CI_PASS" ]; then
 fi
 
 # Refuse to send org-shared CI credentials anywhere but the known prod host.
-if [ "$API_URL" != "https://slash.concierge.razorpay.com" ]; then
-  echo "ERROR: --api-url must be https://slash.concierge.razorpay.com, got: $API_URL"
+if [ "$API_URL" != "https://slash-api.concierge.razorpay.com" ]; then
+  echo "ERROR: --api-url must be https://slash-api.concierge.razorpay.com, got: $API_URL"
   exit 1
 fi
 
