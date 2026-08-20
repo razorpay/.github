@@ -217,17 +217,19 @@ jobs:
 
           PROMPT=$(cat /tmp/depguard_prompt_final.txt)
 
-          # Build the API request body
+          # Build the API request body. Deliberately no "branch" field: the
+          # Slash API rejects protected/default branches ("Branch 'master' is
+          # not allowed. Please use a feature branch.") since the agent must
+          # never be told to work directly against one. DepGuard's own skill
+          # creates its own working branch once it needs to commit anything.
           BODY=$(jq -n \
             --arg prompt "$PROMPT" \
             --arg repo_url "$REPO_URL" \
-            --arg branch "$REPO_BRANCH" \
             --arg slack_channel "$SLACK_CHANNEL" \
             --arg skill "$SKILL_NAME" \
             '{
               prompt: $prompt,
               repository_url: $repo_url,
-              branch: $branch,
               skills: [$skill],
               slack_channel: $slack_channel
             }')
