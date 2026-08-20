@@ -86,7 +86,7 @@ Branch: ${BRANCH}
 Scan parameters:
 - Ecosystems: ${ECOSYSTEMS:-all detected}
 - Severity threshold: ${SEVERITY}
-- Max PRs per run: ${MAX_PRS}
+- Max upgrades to bundle into the PR: ${MAX_PRS}
 - Exclude packages: ${EXCLUDE_PACKAGES:-none}
 
 Manager to tag in Slack: ${MANAGER_EMAIL:-unknown}

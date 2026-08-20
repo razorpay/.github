@@ -1,8 +1,9 @@
 # DepGuard
 
 AI-powered dependency guardian for Razorpay repos. Scans third-party dependencies
-for CVEs, deprecations, EOL status, and breaking changes — then posts findings to
-Slack and opens upgrade PRs.
+for CVEs, deprecations, EOL status, and breaking changes, bundles the safe
+upgrades into a single PR, follows it to a ready-or-blocked state, then posts
+one Slack update with the findings and that PR's status.
 
 Built on [Slash](https://slash.concierge.razorpay.com), Razorpay's autonomous AI agent.
 
@@ -37,9 +38,12 @@ Built on [Slash](https://slash.concierge.razorpay.com), Razorpay's autonomous AI
 │  │  3. Check OSV / GHSA / deps.dev for CVEs                  │   │
 │  │  4. Check endoflife.date for EOL status                   │   │
 │  │  5. Analyze upstream changelogs for breaking changes      │   │
-│  │  6. Post findings to Slack channel (tags manager)         │   │
-│  │  7. Open upgrade PRs for critical/high findings           │   │
-│  │  8. Follow each PR's CI to green, then reply ready/escalate│  │
+│  │  6. Bundle upgrades into ONE PR (one commit per package)  │   │
+│  │  7. Follow that PR's CI to ready/blocked, fixing/dropping │   │
+│  │     individual packages as needed — nothing posted yet    │   │
+│  │  8. Post ONE Slack message: findings + PR status, tags    │   │
+│  │     the manager — only after step 7 reaches a terminal    │   │
+│  │     state, never right after step 6 opens the PR          │   │
 │  └──────────────────────────────────────────────────────────┘   │
 └──────────────────────────────────────────────────────────────────┘
 ```
@@ -50,7 +54,7 @@ Built on [Slash](https://slash.concierge.razorpay.com), Razorpay's autonomous AI
 |-----------|----------|---------|
 | Central reusable workflow | `razorpay/.github` `.github/workflows/depguard-reusable.yml` | Reads per-repo config, calls Slash API |
 | Per-repo cron workflow | Each repo's `.github/workflows/depguard.yml` | Defines cron schedule, calls central workflow |
-| Per-repo config | Each repo's `.github/depguard.yml` | Slack channel, ecosystems, severity, PR limits |
+| Per-repo config | Each repo's `.github/depguard.yml` | Slack channel, ecosystems, severity, upgrade bundle cap |
 | Repo owners | Each repo's `.github/repo_owners.json` | Manager email, Slack ID, team, oncall |
 | Slash skill | `razorpay/agent-skills` `depguard/SKILL.md` | Analysis logic: semgrep, CVEs, deprecations, PRs |
 | Invocation script | `razorpay/.github` `depguard/scripts/invoke-slash.sh` | Standalone script to trigger scans (for testing) |
@@ -180,12 +184,16 @@ When the DepGuard skill runs, Slash:
 3. **Queries CVE databases**: OSV API, GitHub Security Advisories, deps.dev
 4. **Checks EOL status** via endoflife.date API
 5. **Analyzes breaking changes** by reading upstream changelogs and grepping call sites
-6. **Posts a findings report** to the Slack channel, tagged with the repo manager
-7. **Opens upgrade PRs** for critical/high findings (capped at `max_prs_per_run`)
-8. **Follows each PR to a green, reviewable state** — polls its CI on an interval,
-   fixes diff-caused failures directly and unrelated ones via the `heal-pr` skill,
-   then replies in the same Slack thread once every required check passes (or
-   escalates there if CI hasn't gone green within the timeout)
+6. **Bundles upgrade candidates into one PR** — one commit per package, up to
+   `max_prs_per_run` packages, never one PR per package (a second PR is only
+   opened in the rare case two packages' changes genuinely conflict)
+7. **Follows that PR to a ready-or-blocked state** — polls its CI on an
+   interval, fixes a package-attributable failure in that package's commit
+   (dropping it from the bundle if unfixable) and hands unrelated failures to
+   the `heal-pr` skill; nothing is posted to Slack yet
+8. **Posts exactly one Slack message** — the findings report plus the PR's
+   final status — once step 7 reaches ready, merged, or blocked. Never a
+   preliminary "here's what I found" message right after step 6 opens the PR.
 
 Each finding is classified as: `not_affected`, `safe_bump`, `breaking`, or
 `deprecated_with_deadline`, with a risk score.
@@ -200,7 +208,7 @@ Each finding is classified as: `not_affected`, `safe_bump`, `breaking`, or
 | `slack_channel` | string | `{team}` or `depguard-alerts` | Channel for findings |
 | `ecosystems` | list | all detected | Which ecosystems to scan |
 | `severity_threshold` | string | `medium` | Min severity to report |
-| `max_prs_per_run` | int | `3` | Max PRs per scan |
+| `max_prs_per_run` | int | `3` | Max package upgrades bundled into the scan's single PR (name kept for compatibility — not a literal PR count) |
 | `exclude_packages` | list | `[]` | Packages to skip |
 | `extra_prompt` | string | `""` | Repo-specific instructions |
 | `pr_ci_timeout_minutes` | int | `240` | Max time to poll an opened PR's CI before escalating instead of reporting it ready |
