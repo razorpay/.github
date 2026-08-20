@@ -1,0 +1,40 @@
+# DepGuard — Per-Repo Configuration
+# Place this file at .github/depguard.yml in your repository.
+# All fields are optional — defaults are shown below.
+
+# Enable or disable DepGuard scans for this repo
+enabled: true
+
+# Slack channel to post findings in (without # prefix)
+# If omitted, defaults to "{team-name}" or "depguard-alerts"
+slack_channel: "edge-alerts"
+
+# Package ecosystems to scan. If omitted, all detected ecosystems are scanned.
+# Options: go, npm, pip, maven, gem, cargo
+ecosystems:
+  - go
+  - npm
+
+# Minimum severity to report (low, medium, high, critical)
+# Findings below this threshold are suppressed
+severity_threshold: medium
+
+# Maximum number of package upgrades bundled into the scan's single PR
+# (one commit per package; this is a bundle-size cap, not a literal PR count —
+# a scan normally opens exactly one PR). Prioritizes critical and high findings.
+max_prs_per_run: 10
+
+# Packages to exclude from scanning (by name)
+exclude_packages:
+  # - "github.com/some/internal/pkg"
+  # - "lodash"
+
+# Additional prompt text to pass to Slash (appended to the standard prompt)
+# Use this for repo-specific instructions
+extra_prompt: ""
+# Example:
+# extra_prompt: "Focus on the /payments directory. We are planning a Go 1.22 upgrade next sprint."
+
+# Max minutes to poll an opened upgrade PR's CI before giving up and escalating
+# in Slack instead of reporting it ready for review
+pr_ci_timeout_minutes: 240

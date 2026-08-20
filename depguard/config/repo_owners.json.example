@@ -1,0 +1,19 @@
+{
+  "manager": {
+    "name": "Jane Manager",
+    "email": "jane.manager@razorpay.com",
+    "slack_user_id": "U12345678"
+  },
+  "team": "Spine Edge",
+  "oncall": [
+    "oncall1@razorpay.com",
+    "oncall2@razorpay.com"
+  ],
+  "fallback_contacts": [
+    {
+      "name": "Tech Lead",
+      "email": "techlead@razorpay.com",
+      "slack_user_id": "U87654321"
+    }
+  ]
+}

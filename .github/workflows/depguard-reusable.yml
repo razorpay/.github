@@ -1,0 +1,264 @@
+# DepGuard — Central Reusable Workflow
+# This workflow lives in razorpay/.github and is called by each repo's
+# .github/workflows/depguard.yml via `uses: razorpay/.github/.github/workflows/depguard-reusable.yml@master`
+#
+# Each repo controls:
+#   - cron schedule (in their own workflow file)
+#   - .github/depguard.yml (slack channel, ecosystems, severity threshold, etc.)
+#   - .github/repo_owners.json (manager email, team, oncall contacts)
+#
+# This central workflow:
+#   1. Reads per-repo config
+#   2. Calls the Slash API with the depguard skill
+#   3. Slash analyzes the repo and posts findings to the specified Slack channel
+
+name: DepGuard Dependency Scan
+
+on:
+  workflow_call:
+    inputs:
+      repo-full-name:
+        description: "Full repo name (owner/repo) — defaults to the calling repo"
+        type: string
+        required: false
+        default: ${{ github.repository }}
+      repo-default-branch:
+        description: "Default branch to scan — defaults to the repo's default"
+        type: string
+        required: false
+        default: "master"
+      slash-api-url:
+        description: "Slash API base URL"
+        type: string
+        required: false
+        default: "https://slash.concierge.razorpay.com"
+      depguard-skill-name:
+        description: "Name of the DepGuard skill in razorpay/agent-skills"
+        type: string
+        required: false
+        default: "depguard"
+      follow-up-emails:
+        description: "Comma-separated list of fixed follow-up contact emails"
+        type: string
+        required: false
+        default: ""
+    secrets:
+      SLASH_PROD_CI_USER:
+        required: true
+      SLASH_PROD_CI_PASS:
+        required: true
+
+jobs:
+  depguard-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Read DepGuard config
+        id: config
+        run: |
+          # Defaults
+          enabled="true"
+          slack_channel=""
+          ecosystems=""
+          severity_threshold="medium"
+          max_prs_per_run="10"
+          exclude_packages=""
+          extra_prompt=""
+
+          # Read .github/depguard.yml if it exists
+          if [ -f .github/depguard.yml ]; then
+            echo "Found .github/depguard.yml"
+            # Parse YAML — using yq if available, otherwise simple grep
+            if command -v yq &> /dev/null; then
+              enabled=$(yq '.enabled // "true"' .github/depguard.yml)
+              slack_channel=$(yq '.slack_channel // ""' .github/depguard.yml)
+              ecosystems=$(yq '.ecosystems | join(",")' .github/depguard.yml 2>/dev/null || echo "")
+              severity_threshold=$(yq '.severity_threshold // "medium"' .github/depguard.yml)
+              max_prs_per_run=$(yq '.max_prs_per_run // 10' .github/depguard.yml)
+              exclude_packages=$(yq '.exclude_packages | join(",")' .github/depguard.yml 2>/dev/null || echo "")
+              extra_prompt=$(yq '.extra_prompt // ""' .github/depguard.yml)
+            else
+              # Fallback: simple grep-based parsing
+              enabled=$(grep -E '^enabled:' .github/depguard.yml 2>/dev/null | awk '{print $2}' || echo "true")
+              slack_channel=$(grep -E '^slack_channel:' .github/depguard.yml 2>/dev/null | sed 's/.*: *//' | tr -d '"' || echo "")
+              severity_threshold=$(grep -E '^severity_threshold:' .github/depguard.yml 2>/dev/null | awk '{print $2}' || echo "medium")
+              max_prs_per_run=$(grep -E '^max_prs_per_run:' .github/depguard.yml 2>/dev/null | awk '{print $2}' || echo "10")
+            fi
+          else
+            echo "::warning::No .github/depguard.yml found — using defaults"
+          fi
+
+          # Read .github/repo_owners.json if it exists
+          manager_email=""
+          manager_slack_id=""
+          team_name=""
+          if [ -f .github/repo_owners.json ]; then
+            echo "Found .github/repo_owners.json"
+            manager_email=$(jq -r '.manager.email // ""' .github/repo_owners.json 2>/dev/null || echo "")
+            manager_slack_id=$(jq -r '.manager.slack_user_id // ""' .github/repo_owners.json 2>/dev/null || echo "")
+            team_name=$(jq -r '.team // ""' .github/repo_owners.json 2>/dev/null || echo "")
+          else
+            echo "::warning::No .github/repo_owners.json found — manager will not be tagged"
+          fi
+
+          echo "enabled=${enabled}" >> $GITHUB_OUTPUT
+          echo "slack_channel=${slack_channel}" >> $GITHUB_OUTPUT
+          echo "ecosystems=${ecosystems}" >> $GITHUB_OUTPUT
+          echo "severity_threshold=${severity_threshold}" >> $GITHUB_OUTPUT
+          echo "max_prs_per_run=${max_prs_per_run}" >> $GITHUB_OUTPUT
+          echo "exclude_packages=${exclude_packages}" >> $GITHUB_OUTPUT
+          echo "extra_prompt=${extra_prompt}" >> $GITHUB_OUTPUT
+          echo "manager_email=${manager_email}" >> $GITHUB_OUTPUT
+          echo "manager_slack_id=${manager_slack_id}" >> $GITHUB_OUTPUT
+          echo "team_name=${team_name}" >> $GITHUB_OUTPUT
+
+      - name: Skip if disabled
+        if: steps.config.outputs.enabled != 'true'
+        run: |
+          echo "DepGuard is disabled for this repo. Skipping."
+          exit 0
+
+      - name: Determine Slack channel
+        id: slack
+        if: steps.config.outputs.enabled == 'true'
+        env:
+          CONFIG_CHANNEL: ${{ steps.config.outputs.slack_channel }}
+          TEAM_NAME: ${{ steps.config.outputs.team_name }}
+        run: |
+          # Use config channel, or fall back to a default based on team
+          if [ -n "$CONFIG_CHANNEL" ]; then
+            channel="$CONFIG_CHANNEL"
+          else
+            # Default: use team-based channel or a fallback
+            if [ -n "$TEAM_NAME" ]; then
+              channel=$(echo "$TEAM_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+            else
+              channel="depguard-alerts"
+            fi
+            echo "::warning::No slack_channel in depguard.yml — using '${channel}' as default"
+          fi
+          echo "channel=${channel}" >> $GITHUB_OUTPUT
+
+      - name: Install envsubst
+        if: steps.config.outputs.enabled == 'true'
+        run: |
+          if ! command -v envsubst &> /dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq gettext-base
+          fi
+
+      - name: Build Slash prompt
+        id: prompt-final
+        if: steps.config.outputs.enabled == 'true'
+        env:
+          REPO_FULL_NAME: ${{ inputs.repo-full-name }}
+          REPO_BRANCH: ${{ inputs.repo-default-branch }}
+          MANAGER_EMAIL: ${{ steps.config.outputs.manager_email }}
+          MANAGER_SLACK_ID: ${{ steps.config.outputs.manager_slack_id }}
+          TEAM_NAME: ${{ steps.config.outputs.team_name }}
+          FOLLOW_UP_EMAILS: ${{ inputs.follow-up-emails }}
+          ECOSYSTEMS: ${{ steps.config.outputs.ecosystems }}
+          SEVERITY_THRESHOLD: ${{ steps.config.outputs.severity_threshold }}
+          MAX_PRS: ${{ steps.config.outputs.max_prs_per_run }}
+          EXCLUDE_PACKAGES: ${{ steps.config.outputs.exclude_packages }}
+          EXTRA_PROMPT: ${{ steps.config.outputs.extra_prompt }}
+        run: |
+          cat << 'PROMPT_EOF' | envsubst > /tmp/depguard_prompt_final.txt
+          Run the depguard skill to perform a full dependency hygiene scan on this repository.
+
+          Repository: razorpay/${REPO_FULL_NAME}
+          Branch: ${REPO_BRANCH}
+
+          Scan parameters:
+          - Ecosystems: ${ECOSYSTEMS:-all detected}
+          - Severity threshold: ${SEVERITY_THRESHOLD}
+          - Max upgrades to bundle into the PR: ${MAX_PRS}
+          - Exclude packages: ${EXCLUDE_PACKAGES:-none}
+
+          Manager to tag in Slack: ${MANAGER_EMAIL:-unknown}
+          Manager Slack ID: ${MANAGER_SLACK_ID:-unknown}
+          Team: ${TEAM_NAME:-unknown}
+          Follow-up contacts: ${FOLLOW_UP_EMAILS:-none}
+
+          ${EXTRA_PROMPT}
+
+          Post your findings to the Slack channel specified in the task. Tag the manager and follow-up contacts using their Slack user IDs. Bundle upgrade fixes for critical and high findings into a single PR (one commit per package), respecting the bundle cap. Follow that PR to a ready-or-blocked terminal state before posting anything to Slack.
+          PROMPT_EOF
+
+      - name: Call Slash API
+        id: slash
+        if: steps.config.outputs.enabled == 'true'
+        env:
+          SLASH_API_URL: ${{ inputs.slash-api-url }}
+          SLASH_CI_USER: ${{ secrets.SLASH_PROD_CI_USER }}
+          SLASH_CI_PASS: ${{ secrets.SLASH_PROD_CI_PASS }}
+          REPO_URL: "https://github.com/${{ inputs.repo-full-name }}"
+          SLACK_CHANNEL: ${{ steps.slack.outputs.channel }}
+          SKILL_NAME: ${{ inputs.depguard-skill-name }}
+          REPO_BRANCH: ${{ inputs.repo-default-branch }}
+        run: |
+          set -euo pipefail
+
+          # slash-api-url is a workflow_call input any calling repo's own
+          # workflow file controls — refuse to send org-shared CI credentials
+          # anywhere but the known prod host over HTTPS.
+          if [ "$SLASH_API_URL" != "https://slash.concierge.razorpay.com" ]; then
+            echo "::error::slash-api-url must be https://slash.concierge.razorpay.com, got: $SLASH_API_URL"
+            exit 1
+          fi
+
+          PROMPT=$(cat /tmp/depguard_prompt_final.txt)
+
+          # Build the API request body
+          BODY=$(jq -n \
+            --arg prompt "$PROMPT" \
+            --arg repo_url "$REPO_URL" \
+            --arg branch "$REPO_BRANCH" \
+            --arg slack_channel "$SLACK_CHANNEL" \
+            --arg skill "$SKILL_NAME" \
+            '{
+              prompt: $prompt,
+              repository_url: $repo_url,
+              branch: $branch,
+              skills: [$skill],
+              slack_channel: $slack_channel
+            }')
+
+          echo "Calling Slash API at $SLASH_API_URL/api/v1/agents/run"
+          echo "Repository: $REPO_URL"
+          echo "Slack channel: $SLACK_CHANNEL"
+          echo "Skill: $SKILL_NAME"
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST "$SLASH_API_URL/api/v1/agents/run" \
+            -H "Content-Type: application/json" \
+            -u "$SLASH_CI_USER:$SLASH_CI_PASS" \
+            -d "$BODY")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $RESPONSE_BODY"
+
+          if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "201" ] && [ "$HTTP_CODE" != "202" ]; then
+            echo "::error::Slash API call failed with HTTP $HTTP_CODE"
+            echo "::error::Response: $RESPONSE_BODY"
+            exit 1
+          fi
+
+          # Extract task ID from response
+          TASK_ID=$(echo "$RESPONSE_BODY" | jq -r '.task_id // .id // .task.id // empty' 2>/dev/null || echo "")
+
+          if [ -n "$TASK_ID" ]; then
+            echo "Slash task created: $TASK_ID"
+            echo "task_id=${TASK_ID}" >> $GITHUB_OUTPUT
+            echo "::notice::Slash task created successfully. Task ID: $TASK_ID"
+            echo "::notice::View logs at $SLASH_API_URL/tasks/$TASK_ID/execution-logs"
+          else
+            echo "::warning::Could not extract task ID from response. Slash may still be processing."
+          fi
