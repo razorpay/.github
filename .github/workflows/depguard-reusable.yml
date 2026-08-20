@@ -1,6 +1,6 @@
 # DepGuard — Central Reusable Workflow
-# This workflow lives in razorpay/depguard and is called by each repo's
-# .github/workflows/depguard.yml via `uses: razorpay/depguard/.github/workflows/depguard-reusable.yml@main`
+# This workflow lives in razorpay/.github and is called by each repo's
+# .github/workflows/depguard.yml via `uses: razorpay/.github/.github/workflows/depguard-reusable.yml@master`
 #
 # Each repo controls:
 #   - cron schedule (in their own workflow file)
@@ -186,7 +186,7 @@ jobs:
 
           ${EXTRA_PROMPT}
 
-          Post your findings to the Slack channel specified in the task. Tag the manager and follow-up contacts using their Slack user IDs. Open upgrade PRs for critical and high findings, respecting the max PRs limit.
+          Post your findings to the Slack channel specified in the task. Tag the manager and follow-up contacts using their Slack user IDs. Bundle upgrade fixes for critical and high findings into a single PR (one commit per package), respecting the bundle cap. Follow that PR to a ready-or-blocked terminal state before posting anything to Slack.
           PROMPT_EOF
 
       - name: Call Slash API

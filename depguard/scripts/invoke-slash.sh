@@ -74,6 +74,12 @@ if [ -z "$CI_USER" ] || [ -z "$CI_PASS" ]; then
   exit 1
 fi
 
+# Refuse to send org-shared CI credentials anywhere but the known prod host.
+if [ "$API_URL" != "https://slash.concierge.razorpay.com" ]; then
+  echo "ERROR: --api-url must be https://slash.concierge.razorpay.com, got: $API_URL"
+  exit 1
+fi
+
 # Strip # from slack channel if present
 SLACK_CHANNEL="${SLACK_CHANNEL#\#}"
 
@@ -95,7 +101,7 @@ Follow-up contacts: ${FOLLOW_UP_EMAILS:-none}
 
 ${EXTRA_PROMPT}
 
-Post your findings to the Slack channel specified in the task. Tag the manager and follow-up contacts using their Slack user IDs. Open upgrade PRs for critical and high findings, respecting the max PRs limit."
+Post your findings to the Slack channel specified in the task. Tag the manager and follow-up contacts using their Slack user IDs. Bundle upgrade fixes for critical and high findings into a single PR (one commit per package), respecting the bundle cap. Follow that PR to a ready-or-blocked terminal state before posting anything to Slack."
 
 # Build API request body
 REPO_URL="https://github.com/${REPO}"

@@ -142,15 +142,11 @@ The central `razorpay/.github` repo contains:
 
 ### Adding the skill to razorpay/agent-skills
 
-The `skill/SKILL.md` file in this repo is the source of truth. To make it
-available to Slash:
-
-1. Clone `razorpay/agent-skills`
-2. Create directory `depguard/`
-3. Copy `SKILL.md` into it
-4. Open a PR to `razorpay/agent-skills`
-
-Once merged, Slash can load the skill via `skills:depguard`.
+The DepGuard skill lives at `security/skills/depguard/SKILL.md` in
+`razorpay/agent-skills` ([PR #3612](https://github.com/razorpay/agent-skills/pull/3612)).
+To update it, edit the file in that repo directly — this `.github` repo
+does not keep a separate copy. Once merged, Slash can load the skill
+via `skills:depguard`.
 
 ## Testing
 
