@@ -33,3 +33,7 @@ exclude_packages:
 extra_prompt: ""
 # Example:
 # extra_prompt: "Focus on the /payments directory. We are planning a Go 1.22 upgrade next sprint."
+
+# Max minutes to poll an opened upgrade PR's CI before giving up and escalating
+# in Slack instead of reporting it ready for review
+pr_ci_timeout_minutes: 240

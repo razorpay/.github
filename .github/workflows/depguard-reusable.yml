@@ -143,56 +143,13 @@ jobs:
           fi
           echo "channel=${channel}" >> $GITHUB_OUTPUT
 
-      - name: Build Slash prompt
-        id: prompt
-        env:
-          REPO_FULL_NAME: ${{ inputs.repo-full-name }}
-          REPO_BRANCH: ${{ inputs.repo-default-branch }}
-          MANAGER_EMAIL: ${{ steps.config.outputs.manager_email }}
-          MANAGER_SLACK_ID: ${{ steps.config.outputs.manager_slack_id }}
-          TEAM_NAME: ${{ steps.config.outputs.team_name }}
-          FOLLOW_UP_EMAILS: ${{ inputs.follow-up-emails }}
-          ECOSYSTEMS: ${{ steps.config.outputs.ecosystems }}
-          SEVERITY_THRESHOLD: ${{ steps.config.outputs.severity_threshold }}
-          MAX_PRS: ${{ steps.config.outputs.max_prs_per_run }}
-          EXCLUDE_PACKAGES: ${{ steps.config.outputs.exclude_packages }}
-          EXTRA_PROMPT: ${{ steps.config.outputs.extra_prompt }}
-        run: |
-          # Build the prompt that tells Slash what to do
-          cat << 'PROMPT_EOF' > /tmp/depguard_prompt.txt
-Run the depguard skill to perform a full dependency hygiene scan on this repository.
-
-Repository: razorpay/${REPO_FULL_NAME}
-Branch: ${REPO_BRANCH}
-
-Scan parameters:
-- Ecosystems: ${ECOSYSTEMS:-all detected}
-- Severity threshold: ${SEVERITY_THRESHOLD}
-- Max PRs per run: ${MAX_PRS}
-- Exclude packages: ${EXCLUDE_PACKAGES:-none}
-
-Manager to tag in Slack: ${MANAGER_EMAIL:-unknown}
-Manager Slack ID: ${MANAGER_SLACK_ID:-unknown}
-Team: ${TEAM_NAME:-unknown}
-Follow-up contacts: ${FOLLOW_UP_EMAILS:-none}
-
-${EXTRA_PROMPT}
-
-Post your findings to the Slack channel specified in the task. Tag the manager and follow-up contacts using their Slack user IDs. Open upgrade PRs for critical and high findings, respecting the max PRs limit.
-PROMPT_EOF
-
-          # Substitute env vars (the heredoc above used quoted delimiter to avoid
-          # premature expansion; now we do it safely)
-          envsubst < /tmp/depguard_prompt.txt > /tmp/depguard_prompt_final.txt
-          echo "prompt_file=/tmp/depguard_prompt_final.txt" >> $GITHUB_OUTPUT
-
       - name: Install envsubst
         run: |
           if ! command -v envsubst &> /dev/null; then
             sudo apt-get update -qq && sudo apt-get install -y -qq gettext-base
           fi
 
-      - name: Rebuild prompt with envsubst
+      - name: Build Slash prompt
         id: prompt-final
         env:
           REPO_FULL_NAME: ${{ inputs.repo-full-name }}
@@ -208,26 +165,26 @@ PROMPT_EOF
           EXTRA_PROMPT: ${{ steps.config.outputs.extra_prompt }}
         run: |
           cat << 'PROMPT_EOF' | envsubst > /tmp/depguard_prompt_final.txt
-Run the depguard skill to perform a full dependency hygiene scan on this repository.
+          Run the depguard skill to perform a full dependency hygiene scan on this repository.
 
-Repository: razorpay/${REPO_FULL_NAME}
-Branch: ${REPO_BRANCH}
+          Repository: razorpay/${REPO_FULL_NAME}
+          Branch: ${REPO_BRANCH}
 
-Scan parameters:
-- Ecosystems: ${ECOSYSTEMS:-all detected}
-- Severity threshold: ${SEVERITY_THRESHOLD}
-- Max PRs per run: ${MAX_PRS}
-- Exclude packages: ${EXCLUDE_PACKAGES:-none}
+          Scan parameters:
+          - Ecosystems: ${ECOSYSTEMS:-all detected}
+          - Severity threshold: ${SEVERITY_THRESHOLD}
+          - Max PRs per run: ${MAX_PRS}
+          - Exclude packages: ${EXCLUDE_PACKAGES:-none}
 
-Manager to tag in Slack: ${MANAGER_EMAIL:-unknown}
-Manager Slack ID: ${MANAGER_SLACK_ID:-unknown}
-Team: ${TEAM_NAME:-unknown}
-Follow-up contacts: ${FOLLOW_UP_EMAILS:-none}
+          Manager to tag in Slack: ${MANAGER_EMAIL:-unknown}
+          Manager Slack ID: ${MANAGER_SLACK_ID:-unknown}
+          Team: ${TEAM_NAME:-unknown}
+          Follow-up contacts: ${FOLLOW_UP_EMAILS:-none}
 
-${EXTRA_PROMPT}
+          ${EXTRA_PROMPT}
 
-Post your findings to the Slack channel specified in the task. Tag the manager and follow-up contacts using their Slack user IDs. Open upgrade PRs for critical and high findings, respecting the max PRs limit.
-PROMPT_EOF
+          Post your findings to the Slack channel specified in the task. Tag the manager and follow-up contacts using their Slack user IDs. Open upgrade PRs for critical and high findings, respecting the max PRs limit.
+          PROMPT_EOF
 
       - name: Call Slash API
         id: slash

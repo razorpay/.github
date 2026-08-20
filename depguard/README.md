@@ -39,6 +39,7 @@ Built on [Slash](https://slash.concierge.razorpay.com), Razorpay's autonomous AI
 │  │  5. Analyze upstream changelogs for breaking changes      │   │
 │  │  6. Post findings to Slack channel (tags manager)         │   │
 │  │  7. Open upgrade PRs for critical/high findings           │   │
+│  │  8. Follow each PR's CI to green, then reply ready/escalate│  │
 │  └──────────────────────────────────────────────────────────┘   │
 └──────────────────────────────────────────────────────────────────┘
 ```
@@ -181,6 +182,10 @@ When the DepGuard skill runs, Slash:
 5. **Analyzes breaking changes** by reading upstream changelogs and grepping call sites
 6. **Posts a findings report** to the Slack channel, tagged with the repo manager
 7. **Opens upgrade PRs** for critical/high findings (capped at `max_prs_per_run`)
+8. **Follows each PR to a green, reviewable state** — polls its CI on an interval,
+   fixes diff-caused failures directly and unrelated ones via the `heal-pr` skill,
+   then replies in the same Slack thread once every required check passes (or
+   escalates there if CI hasn't gone green within the timeout)
 
 Each finding is classified as: `not_affected`, `safe_bump`, `breaking`, or
 `deprecated_with_deadline`, with a risk score.
@@ -198,6 +203,7 @@ Each finding is classified as: `not_affected`, `safe_bump`, `breaking`, or
 | `max_prs_per_run` | int | `3` | Max PRs per scan |
 | `exclude_packages` | list | `[]` | Packages to skip |
 | `extra_prompt` | string | `""` | Repo-specific instructions |
+| `pr_ci_timeout_minutes` | int | `240` | Max time to poll an opened PR's CI before escalating instead of reporting it ready |
 
 ### `.github/repo_owners.json`
 
