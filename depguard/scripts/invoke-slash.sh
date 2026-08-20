@@ -103,19 +103,21 @@ ${EXTRA_PROMPT}
 
 Post your findings to the Slack channel specified in the task. Tag the manager and follow-up contacts using their Slack user IDs. Bundle upgrade fixes for critical and high findings into a single PR (one commit per package), respecting the bundle cap. Follow that PR to a ready-or-blocked terminal state before posting anything to Slack."
 
-# Build API request body
+# Build API request body. Deliberately no "branch" field: the Slash API
+# rejects protected/default branches ("Branch 'master' is not allowed.
+# Please use a feature branch.") since the agent must never be told to work
+# directly against one. DepGuard's own skill creates its own working branch
+# once it needs to commit anything.
 REPO_URL="https://github.com/${REPO}"
 
 BODY=$(jq -n \
   --arg prompt "$PROMPT" \
   --arg repo_url "$REPO_URL" \
-  --arg branch "$BRANCH" \
   --arg slack_channel "$SLACK_CHANNEL" \
   --argjson skills "[\"${SKILL}\"]" \
   '{
     prompt: $prompt,
     repository_url: $repo_url,
-    branch: $branch,
     skills: $skills,
     slack_channel: $slack_channel
   }')
