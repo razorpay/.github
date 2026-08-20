@@ -148,11 +148,7 @@ jobs:
         if: steps.config.outputs.enabled == 'true'
         run: |
           if ! command -v envsubst &> /dev/null; then
-            if [ "$(id -u)" = "0" ]; then
-              apt-get update -qq && apt-get install -y -qq gettext-base
-            else
-              sudo apt-get update -qq && sudo apt-get install -y -qq gettext-base
-            fi
+            sudo apt-get update -qq && sudo apt-get install -y -qq gettext-base
           fi
 
       - name: Build Slash prompt
