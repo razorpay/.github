@@ -1,29 +1,20 @@
-![banner](https://raw.githubusercontent.com/razorpay/.github/master/banner.jpg)
+![Razorpay AI and Engineering](https://raw.githubusercontent.com/razorpay/.github/master/banner.png)
 
-# Razorpay
+# Razorpay Open Source Tools
 
-Razorpay aims to revolutionize money management for online businesses by providing clean, developer-friendly APIs and hassle-free integration. We offer a fast, affordable and secure way for merchants, schools, ecommerce and other companies to accept and disburse payments online, own a fully-functional current account and avail working capital loans.
+This is where [Razorpay](https://razorpay.com) builds in the open, tools we built for ourselves first, and decided the rest of the world should have too. Our own teams build AI-natively, agents write a meaningful share of our code, docs, and internal tools, and a lot of what lands here comes directly out of that. Pull up a repo, star what's useful, tell us what's broken.
 
-## Getting Started
+## Get started
 
-To get started with using Razorpay, [signup](https://dashboard.razorpay.com), [check out our docs](https://razorpay.com/docs/), [list of integrations](https://razorpay.com/integrations/), and the [Razorpay App Store](https://razorpay.com/app-store/).
+- Follow the setup steps in each repo's own README
+- Open an issue if something's broken, or contribute by raising a PR to fix it, we value feedback above everything!
+- Check the **Pinned** repos below for our most active projects
 
-## Open Source ![Hacktoberfest Badge](https://img.shields.io/badge/Hacktoberfest-Open-green)
+## Contribute
 
-We believe in the power of open-source, and publish our contributions and open-source projects at [opensource.razorpay.com](https://opensource.razorpay.com).
+Issues, PRs, and feature requests are welcome on any public repo. Each one has its own contribution guidelines, see our [Code of Conduct](https://github.com/razorpay/.github/blob/master/CODE_OF_CONDUCT.md) for how we expect people to engage here.
 
-We are always looking for new ways to improve the experience for developers. We welcome feedback, bug reports, and feature requests from the community!
+## Stay in the loop
 
-## Hacktoberfest
-
-We are participating in [Hacktoberfest 2023](https://hacktoberfest.com/). Participate by contributing to Razorpay's open source repositories and receive special goodies. Please see [this page]( https://opensource.razorpay.com/hacktoberfest-2023/) for more details.
-
-## Follow Us
-
-- Check out our Engineering Blog at [engineering.razorpay.com](https://engineering.razorpay.com/).
-- Follow our Engineering team on [X.com](https://x.com/RazorpayTech)
-- Check out our stack at [StackShare](https://stackshare.io/companies/razorpay).
-- Follow our Design team on [Twitter](https://twitter.com/razorpay_design) or the [Design Blog](https://design.razorpay.com)
-
-[Security](https://hackerone.com/razorpay)|[Code of Conduct](CODE_OF_CONDUCT.md)|[Work with us](https://razorpay.com/jobs)|[Support](https://razorpay.com/support/)
----|---|---|---
+- Engineering Blog: [engineering.razorpay.com](https://engineering.razorpay.com)
+- Engineering on X: [x.com/RazorpayTech](https://x.com/RazorpayTech)
